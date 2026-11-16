@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
     from treestamp.editor import EditorController
 
-COMMANDS = ("tui", "update", "check", "help")
+COMMANDS = ("tui", "update", "check")
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -53,9 +53,10 @@ def _parser() -> argparse.ArgumentParser:
     editor = commands.add_parser(
         "tui",
         help="open the editor or print a treestamp",
-        description=(
-            "Create or edit a treestamp from the staged Git index. "
-            "Stage changes before opening the editor."
+        epilog=(
+            "--load replaces --document. Positional repository paths are no longer "
+            "accepted; use --load DOCUMENT to select a document's repository, "
+            "or change directory before starting the editor."
         ),
     )
     editor.add_argument(
@@ -76,17 +77,9 @@ def _parser() -> argparse.ArgumentParser:
         child = commands.add_parser(
             command,
             help=(
-                "report whether update would change a document"
+                "report whether Update would change a document"
                 if command == "check"
                 else "update a treestamped document"
-            ),
-            description=(
-                "Compare a treestamped document with the target snapshot without "
-                "writing it. Print a diff and exit 1 if an update is needed; "
-                "exit 0 if it is current."
-                if command == "check"
-                else "Update a treestamped document from the target snapshot, "
-                "preserving content outside its treestamp markers."
             ),
         )
         child.add_argument(
@@ -98,21 +91,11 @@ def _parser() -> argparse.ArgumentParser:
             ),
         )
         child.add_argument(
-            "--target",
-            metavar="REF",
-            help="target Git ref (default: staged Git index)",
+            "--target", metavar="REF", help="target Git ref (default: captured index)"
         )
         child.add_argument(
-            "--compare", metavar="REF", help="baseline Git ref for detecting moves"
+            "--compare", metavar="REF", help="reference for detected moves"
         )
-    help_command = commands.add_parser("help", help="show general or command help")
-    help_command.add_argument(
-        "help_command",
-        metavar="COMMAND",
-        nargs="?",
-        choices=COMMANDS,
-        help=f"command to describe: {', '.join(COMMANDS)} (default: general help)",
-    )
     return parser
 
 
@@ -238,12 +221,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not arguments or arguments[0] not in (*COMMANDS, "--help", "-h", "--version"):
         arguments.insert(0, "tui")
     try:
-        parser = _parser()
-        args = parser.parse_args(arguments)
-        if args.command == "help":
-            # Validate help's arguments before argparse's help action exits.
-            target = [args.help_command] if args.help_command else []
-            parser.parse_args([*target, "--help"])
+        args = _parser().parse_args(arguments)
         if args.command == "tui":
             return _explore(args)
         return _maintain(args)

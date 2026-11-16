@@ -50,10 +50,10 @@ class DocumentChoiceScreen(ModalScreen[str | None]):
 
     def on_descendant_focus(self, event: events.DescendantFocus) -> None:
         description = (
-            "Start a tree from the repository's staged Git index."
+            "Start a tree from the current repository."
             if event.widget.id == "new"
             else "Open a document with an existing treestamp and preview updates "
-            "from the staged Git index."
+            "from the current checkout"
         )
         self.query_one("#choice-description", Static).update(description)
 
@@ -168,7 +168,7 @@ class PreviewScreen(ModalScreen[None]):
                 id="preview",
             )
             yield Static(
-                "Arrows/PgUp/PgDn: browse   Home/End: jump   Escape/q/Enter: close",
+                "Arrows/PgUp/PgDn: browse   Home/End: jump   Escape/q: close",
                 markup=False,
             )
 
